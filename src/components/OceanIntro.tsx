@@ -1,15 +1,16 @@
 "use client";
 
-import { AnimatePresence, motion, useMotionValue, animate } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, animate, MotionValue } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 
+/** CSS 変数を型で安全に扱うためのヘルパー */
+type CSSVar<K extends string> = React.CSSProperties & Record<K, string | number>;
+type MotionCSSVar<K extends string> = React.CSSProperties &
+  Record<K, string | number | MotionValue<number>>;
 
 type OceanIntroProps = {
-  /** /public 配下のロゴ画像パス */
   logoSrc: string;
-  /** ミリ秒（デフォ 2600ms） */
   durationMs?: number;
-  /** セッション中は1回だけ表示（true 推奨） */
   onlyOnce?: boolean;
 };
 
@@ -20,7 +21,6 @@ export default function OceanIntro({
 }: OceanIntroProps) {
   const [show, setShow] = useState(false);
 
-  // 泡の乱数プリセット（レイアウト確定後は毎回同じ見え方）
   const bubbles = useMemo(() => {
     const N = 22;
     return Array.from({ length: N }, (_, i) => {
@@ -45,7 +45,6 @@ export default function OceanIntro({
     }
     setShow(true);
 
-    // スクロール固定
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -82,49 +81,44 @@ export default function OceanIntro({
           <div className="absolute inset-0 bg-[radial-gradient(100%_100%_at_50%_50%,transparent_60%,rgba(0,0,0,0.35)_100%)]" />
 
           {/* 泡 */}
-          {bubbles.map((b) => (
-            <span
-              key={b.id}
-              className="absolute bottom-[-12vh] rounded-full bg-white/70"
-              style={{
-                left: `${b.left}%`,
-                width: b.size,
-                height: b.size,
-                filter: b.blur ? `blur(${b.blur}px)` : "none",
-                opacity: b.opacity,
-                animation: `bubble-rise ${b.dur}ms linear ${b.delay}ms 1 both`,
-                // 横にほんの少し流す（カスタムプロパティを使って keyframes で参照）
-                // @ts-ignore
-                "--drift": `${b.drift}px`,
-              } as React.CSSProperties}
-            />
-          ))}
+          {bubbles.map((b) => {
+            const style: CSSVar<"--drift"> = {
+              left: `${b.left}%`,
+              width: b.size,
+              height: b.size,
+              filter: b.blur ? `blur(${b.blur}px)` : "none",
+              opacity: b.opacity,
+              animation: `bubble-rise ${b.dur}ms linear ${b.delay}ms 1 both`,
+              "--drift": `${b.drift}px`,
+            };
+            return (
+              <span
+                key={b.id}
+                className="absolute bottom-[-12vh] rounded-full bg-white/70"
+                style={style}
+              />
+            );
+          })}
 
           {/* ロゴ（浮かび上がる） */}
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
             style={{
-                // 親にパースペクティブを与える（必須）
-                perspective: "1000px",
-                transformStyle: "preserve-3d",
+              perspective: "1000px",
+              transformStyle: "preserve-3d",
             }}
-            >
+          >
             <ZLogo logoSrc={logoSrc} />
-            
-            </motion.div>
+          </motion.div>
 
-          {/* 水面の“波線”が上から降りてきて視界が晴れる感じ（ほんのり） */}
+          {/* 上からおりてくる波 */}
           <motion.div
             className="absolute -top-24 left-0 right-0 h-48 pointer-events-none"
             initial={{ y: -80, opacity: 0.0 }}
             animate={{ y: 0, opacity: 0.4 }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.15 }}
           >
-            <svg
-              viewBox="0 0 1200 200"
-              preserveAspectRatio="none"
-              className="w-full h-full"
-            >
+            <svg viewBox="0 0 1200 200" preserveAspectRatio="none" className="w-full h-full">
               <path
                 d="M0,120 C200,80 300,160 500,120 C700,80 900,160 1200,120 L1200,0 L0,0 Z"
                 fill="url(#waveGrad)"
@@ -144,8 +138,7 @@ export default function OceanIntro({
 }
 
 function ZLogo({ logoSrc }: { logoSrc: string }) {
-  // もっと奥からスタートさせる（効果を明確に）
-  const tz = useMotionValue(-600); // px
+  const tz = useMotionValue(-600);
 
   useEffect(() => {
     const controls = animate(tz, 0, {
@@ -156,27 +149,23 @@ function ZLogo({ logoSrc }: { logoSrc: string }) {
     return () => controls.stop();
   }, [tz]);
 
+  // MotionValue を CSS 変数で渡せるように型を拡張
+  const style: MotionCSSVar<"--tz"> = {
+    transformOrigin: "50% 60%",
+    transformStyle: "preserve-3d",
+    "--tz": tz,
+  };
+
   return (
     <motion.img
       src={logoSrc}
       alt=""
       className="h-24 w-auto sm:h-28 md:h-36 select-none drop-shadow-[0_12px_18px_rgba(0,0,0,0.35)] will-change-transform"
-      style={
-        {
-          ["--tz" as any]: tz,              // translateZ 用のCSS変数
-          transformOrigin: "50% 60%",
-          transformStyle: "preserve-3d",
-        } as React.CSSProperties
-      }
-      // ✅ 要素自身の transform に perspective を直書き
-      //    さらに translate3d で確実に3D化
-      transformTemplate={(t) =>
-        `perspective(900px) translate3d(0,0,var(--tz, -600px)) ${t}`
-      }
+      style={style}
+      transformTemplate={(t) => `perspective(900px) translate3d(0,0,var(--tz, -600px)) ${t}`}
       initial={{
         opacity: 0,
         y: 16,
-        // 保険：環境差でZの見え方が弱い場合も拡大を少し併用
         scale: 0.88,
         rotateX: 6,
         filter: "blur(4px) brightness(0.96)",
@@ -184,7 +173,7 @@ function ZLogo({ logoSrc }: { logoSrc: string }) {
       animate={{
         opacity: 1,
         y: 0,
-        scale: 1.08,   // ほんのりオーバーシュートで“前進”を強調
+        scale: 1.08,
         rotateX: 0,
         filter: "blur(0px) brightness(1)",
       }}
