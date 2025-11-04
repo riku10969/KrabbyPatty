@@ -1,8 +1,7 @@
 import "./globals.css"; // ←これ必須！
 
 export const metadata = {
-  title: "Krabby Patty (仮) – Recovery",
-  description: "復元用スターター",
+  title: "Krabby Patty",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
