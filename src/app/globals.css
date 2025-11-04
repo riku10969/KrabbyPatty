@@ -32,3 +32,45 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ——— OceanIntro ——————————————————————————— */
+@keyframes bubble-rise {
+  0%   { transform: translateY(0) translateX(0) scale(0.9); opacity: 0; }
+  10%  { opacity: 0.75; }
+  100% { transform: translateY(-120vh) translateX(var(--drift, 0px)) scale(1); opacity: 0; }
+}
+
+/* コースティクス（ゆらめく水面の光） */
+.caustics {
+  background:
+    radial-gradient(60% 40% at 50% 50%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 65%),
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.16) 0 10deg, rgba(255,255,255,0.0) 10deg 20deg);
+  animation: caustics-move 4.5s ease-in-out infinite alternate;
+}
+@keyframes caustics-move {
+  0%   { transform: translateY(0) scale(1);    filter: blur(0.5px); }
+  100% { transform: translateY(-4%) scale(1.03); filter: blur(1px); }
+}
+
+/* 動きを苦手とする方へ配慮（OS設定に追従） */
+@media (prefers-reduced-motion: reduce) {
+  .ocean-intro, .ocean-intro * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(var(--drift, 0px));
+    opacity: 0;
+  }
+}
