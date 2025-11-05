@@ -530,7 +530,7 @@ export default function KrabbyMobileOrderDemo({
                 注文へ進む
               </button>
               <button
-                onClick={() => alert("厨房にWi-Fiが沈みました（ジョーク）。")}
+                onClick={() => alert("現在は空いてます。")}
                 className="rounded-xl px-3 py-2 text-xs border border-white/10"
               >
                 店内状況

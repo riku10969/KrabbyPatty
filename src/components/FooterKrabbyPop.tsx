@@ -69,7 +69,7 @@ export default function FooterKrabbyPopMini() {
 
         {/* コピーライト */}
         <div className="text-center text-xs font-bold text-[#003E99]/80 pb-4">
-          © {year} Krabby Patty — 海の幸はジョークです。
+          © {year} Krabby Patty
         </div>
       </div>
 
